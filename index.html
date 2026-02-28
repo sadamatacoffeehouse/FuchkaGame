@@ -3,12 +3,26 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fuchka Master</title>
+
 <style>
 body{
   margin:0;
   overflow:hidden;
-  background:#ffe9c6;
   font-family:sans-serif;
+  background:url('images/logo.png') no-repeat center center fixed;
+  background-size:cover;
+}
+
+/* Overlay for slight dim effect */
+body::after{
+  content:"";
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(255,233,198,0.85);
+  z-index:-1;
 }
 
 #scoreBoard{
@@ -20,27 +34,39 @@ body{
 }
 
 #plate{
-  width:110px;
-  height:20px;
+  width:200px;
+  height:30px;
   background:#5c2e00;
   position:absolute;
   bottom:20px;
   left:50%;
   transform:translateX(-50%);
-  border-radius:10px;
+  border-radius:20px;
 }
 
 .item{
-  width:30px;
-  height:30px;
-  border-radius:50%;
+  width:40px;
+  height:40px;
   position:absolute;
   top:0;
+  background-size:cover;
+  background-position:center;
 }
 
-.normal{ background:goldenrod; }
-.spicy{ background:red; }
-.bomb{ background:black; }
+#collected{
+  position:absolute;
+  bottom:55px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:5px;
+}
+
+.collected-item{
+  width:30px;
+  height:30px;
+  background-size:cover;
+}
 
 #gameOver{
   position:absolute;
@@ -63,9 +89,11 @@ button{
 }
 </style>
 </head>
+
 <body>
 
 <div id="scoreBoard">Score: 0 | Life: 3 | High: 0</div>
+<div id="collected"></div>
 <div id="plate"></div>
 
 <div id="gameOver">
@@ -74,8 +102,10 @@ button{
 </div>
 
 <script>
+
 let plate = document.getElementById("plate");
 let scoreBoard = document.getElementById("scoreBoard");
+let collected = document.getElementById("collected");
 let gameOverScreen = document.getElementById("gameOver");
 let finalText = document.getElementById("finalText");
 
@@ -93,7 +123,8 @@ document.addEventListener("touchmove", function(e){
 });
 
 function movePlate(e){
-  plate.style.left = e.clientX - 55 + "px";
+  plate.style.left = e.clientX - 100 + "px";
+  collected.style.left = e.clientX - 100 + "px";
 }
 
 function createItem(){
@@ -105,17 +136,19 @@ function createItem(){
   let rand = Math.random();
 
   if(rand < 0.7){
-    item.classList.add("normal");
+    item.style.backgroundImage = "url('images/fuchka.png')";
     item.dataset.type = "normal";
-  }else if(rand < 0.9){
-    item.classList.add("spicy");
+  }
+  else if(rand < 0.9){
+    item.style.backgroundImage = "url('images/spicy.png')";
     item.dataset.type = "spicy";
-  }else{
-    item.classList.add("bomb");
+  }
+  else{
+    item.style.backgroundImage = "url('images/bomb.png')";
     item.dataset.type = "bomb";
   }
 
-  item.style.left = Math.random() * (window.innerWidth - 30) + "px";
+  item.style.left = Math.random() * (window.innerWidth - 40) + "px";
   document.body.appendChild(item);
 
   let fall = setInterval(function(){
@@ -127,7 +160,6 @@ function createItem(){
 
     item.style.top = item.offsetTop + speed + "px";
 
-    // Missed
     if(item.offsetTop > window.innerHeight){
       if(item.dataset.type !== "bomb"){
         life--;
@@ -138,19 +170,20 @@ function createItem(){
       updateBoard();
     }
 
-    // Catch
     if(
-      item.offsetTop > window.innerHeight - 70 &&
+      item.offsetTop > window.innerHeight - 90 &&
       item.offsetLeft > plate.offsetLeft &&
-      item.offsetLeft < plate.offsetLeft + 110
+      item.offsetLeft < plate.offsetLeft + 200
     ){
 
       if(item.dataset.type === "normal"){
         score += 1;
+        addToPlate("images/fuchka.png");
       }
       else if(item.dataset.type === "spicy"){
         score += 3;
-        speed += 0.5; // speed increase
+        speed += 0.5;
+        addToPlate("images/spicy.png");
       }
       else if(item.dataset.type === "bomb"){
         life = 0;
@@ -162,7 +195,14 @@ function createItem(){
       checkGameOver();
     }
 
-  }, 20);
+  },20);
+}
+
+function addToPlate(imagePath){
+  let small = document.createElement("div");
+  small.classList.add("collected-item");
+  small.style.backgroundImage = "url('" + imagePath + "')";
+  collected.appendChild(small);
 }
 
 function updateBoard(){
@@ -170,6 +210,7 @@ function updateBoard(){
     highScore = score;
     localStorage.setItem("highScore", highScore);
   }
+
   scoreBoard.innerText =
     "Score: " + score +
     " | Life: " + life +
@@ -189,11 +230,13 @@ function restartGame(){
   life = 3;
   speed = 4;
   gameRunning = true;
+  collected.innerHTML = "";
   gameOverScreen.style.display = "none";
   updateBoard();
 }
 
 setInterval(createItem, 900);
+
 </script>
 
 </body>
